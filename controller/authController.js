@@ -1,7 +1,7 @@
 const { hashPassword, comparePassword } = require("./../helper/authHelper");
 const userModel = require("./../models/userModel");
 const jwt = require("jsonwebtoken");
-const orderModel = require('./../models/orderModel')
+const orderModel = require("./../models/orderModel");
 const registerController = async (req, res) => {
   try {
     const { name, email, password, phone, address, answer } = req.body;
@@ -133,44 +133,91 @@ const testController = (req, res) => {
   }
 };
 
-const updateProfileController = async(req,res)=>{
-  try{
-    const {name,email,password,address,phone} = req.body;
-    const user = await userModel.findById(req.user._id)
-    if(password && password.length<6) return res.json({error:'Password is required snd 6 character long'})
-    const hashedPassword = password ? await hashedPassword(password) : undefined
-    const updatedUser = await userModel.findByIdAndUpdate(req.user._id,{
-      name: name || user.name,
-      password: hashedPassword || user.password,
-      email: email || user.email,
-      phone: phone || user.phone,
-      address: address || user.address,
-    },{new:true})
+const updateProfileController = async (req, res) => {
+  try {
+    const { name, email, password, address, phone } = req.body;
+    const user = await userModel.findById(req.user._id);
+    if (password && password.length < 6)
+      return res.json({ error: "Password is required snd 6 character long" });
+    const hashedPassword = password
+      ? await hashedPassword(password)
+      : undefined;
+    const updatedUser = await userModel.findByIdAndUpdate(
+      req.user._id,
+      {
+        name: name || user.name,
+        password: hashedPassword || user.password,
+        email: email || user.email,
+        phone: phone || user.phone,
+        address: address || user.address,
+      },
+      { new: true }
+    );
     res.status(200).send({
-      success:true,
+      success: true,
       message: "Profile Updated Successfully",
       updatedUser,
-    })
-  }catch(error){
-    console.log(error)
+    });
+  } catch (error) {
+    console.log(error);
     res.status(400).send({
       success: false,
       message: "Error while updating profile",
       error,
-    })
+    });
   }
-}
+};
 
-const getOrdersController = async(req,res)=>{
+const getOrdersController = async (req, res) => {
+  try {
+    const orders = await orderModel
+      .find({buyer: req.user._id})
+      .populate("products", "-photo ")
+      .populate("buyer", "name"); 
+    res.json(orders);
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      success: false,
+      message: "Error while getting orders!",
+      error,
+    });
+  }
+};
+
+const getAllOrdersController = async (req, res) => {
+  try {
+    const orders = await orderModel
+      .find({})
+      .populate("products", "-photo ")
+      .populate("buyer", "name")
+      .sort({createdAt: -1});
+    res.json(orders);
+  } catch (e) {
+    console.log(e);
+    res.status(500).send({
+      success: false,
+      message: "Error while getting all orders!",
+      e,
+    });
+  }
+};
+
+const orderStatusController = async(req,res)=>{
   try{
-    const orders = await orderModel.find({buyer:req.user._id}).populate("products","-photo ").populate("buyer","name")
-    res.json(orders)
-  }catch(error){
-    console.log(error)
+    const {orderId} = req.params;
+    const {status} = req.body;
+    const orders = await orderModel.findByIdAndUpdate(
+      orderId,
+      {status},
+      {new: true}
+    );
+  }catch(e){
+    console.log(e);
     res.status(500).send({
       success:false,
-      message:"Error while getting orders!",
-      error,
+      message:"Failed to process item",
+      e,
     })
   }
 }
@@ -182,4 +229,6 @@ module.exports = {
   forgotPasswordController,
   updateProfileController,
   getOrdersController,
+  getAllOrdersController,
+  orderStatusController,
 };

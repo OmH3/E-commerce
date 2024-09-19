@@ -6,6 +6,8 @@ const {
   forgotPasswordController,
   updateProfileController,
   getOrdersController,
+  getAllOrdersController,
+  orderStatusController,
 } = require("./../controller/authController");
 const { requireSignIn, isAdmin } = require("./../middleware/authMiddleware");
 const router = express.Router();
@@ -29,5 +31,7 @@ router.get("/admin-auth", requireSignIn,isAdmin, (req, res) => {
 router.put('/profile', requireSignIn, updateProfileController)
 
 router.get('/orders', requireSignIn, getOrdersController)
+router.get('/all-orders', requireSignIn,isAdmin, getAllOrdersController)
+router.put('/order-status/:orderId', requireSignIn,isAdmin, orderStatusController)
 
 module.exports = router;
